@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Hello World - Go</title>
+    <!-- 
+    The wasm_exec.js must come before our Javascript (index.js), 
+    as it defines some global objects 
+    -->
+    <script type="text/javascript" src="dist/exec.js"></script>
+    <!-- 
+    WASM is loaded asynchronously, so we need to wait for it to be ready
+    -->
+    <script type="text/javascript">
+        const wasmBrowserInstantiate = async (wasmModuleUrl, importObject) => {
+            let response = undefined;
+
+            // Check if the browser supports streaming instantiation
+            if (WebAssembly.instantiateStreaming) {
+                // Fetch the module, and instantiate it as it is downloading
+                response = await WebAssembly.instantiateStreaming(
+                    fetch(wasmModuleUrl),
+                    importObject
+                );
+            } else {
+                // Fallback to using fetch to download the entire module
+                // And then instantiate the module
+                const fetchAndInstantiateTask = async () => {
+                    const wasmArrayBuffer = await fetch(wasmModuleUrl).then((response) =>
+                        response.arrayBuffer()
+                    );
+                    return WebAssembly.instantiate(wasmArrayBuffer, importObject);
+                };
+
+                response = await fetchAndInstantiateTask();
+            }
+
+            return response;
+        };
+    </script>
+</head>
+
+<body>
+    <main style="padding-top: 20px; padding-bottom:20px;">
+        <input id="a" type="number" />
+        +
+        <input id="b" type="number" />
+        =
+        <span id="result"></span>
+    </main>
+    
+    <button id="add">Calculate</button>
+
+    <script type="module" src="./index.js"></script>
+</body>
+
+</html>
